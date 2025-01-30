@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 
 const subOptionSchema = new mongoose.Schema({
-    key: { type: String, required: true},
     name: { type: String, required: true},
     description: { type: String}
 });

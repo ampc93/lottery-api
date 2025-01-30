@@ -40,6 +40,7 @@ export const createRoleHandler = async (req, res) => {
             message: 'El rol fue creado correctamente.',
             role: newRole,
         });
+        
     } catch (error) {
         // Log detallado en desarrollo
         if (process.env.NODE_ENV === 'development') {

@@ -86,3 +86,35 @@ export const deleteOption = async (id) =>{
     }
 
 };
+
+export const findOptionsByDescription = async (description) =>{
+    return await Option.find({ name: { $regex: description, $options: 'i'}});
+};
+
+export const findOptionByOneDescription = async (description) =>{
+    return await Option.findOne({
+        name: { $regex: new RegExp(`^${description}$`, 'i')}
+    });
+};
+
+export const findSubOptionByOneName = async (id, name) => {
+
+    try {
+
+        const option = await Option.findById(id);
+        if(!option){
+            throw new Error('Opción no encontrada.');
+        }
+
+        const subOption = option.subOptions.find(
+            subOption => subOption.name.toLowerCase() === name.toLowerCase()
+        );
+
+        return subOption || null;
+
+    } catch (error) {
+        throw new Error(`Buscar subOpción: ${error.message}`);
+    }
+    
+}
+
