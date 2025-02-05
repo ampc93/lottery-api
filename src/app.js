@@ -6,6 +6,7 @@ import organizationRoutes from './routes/organizationRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
 import optionRoutes from './routes/optionRoutes.js';
 import permissionRoutes from './routes/permissionRoutes.js';
+import userProfileRoutes from './routes/userProfileRoutes.js';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/organizations', organizationRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/options', optionRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/users', userProfileRoutes);
 
 //Conectar a la base de datos
 connectDB();
