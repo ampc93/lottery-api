@@ -19,3 +19,15 @@ export const updateUser = async (id, userData) => {
 export const deleteUser = async (id) =>{
     return await UserProfile.findByIdAndDelete(id);
 };
+
+export const findUserByName = async (name) =>{
+    
+    return await UserProfile.find({ 
+        $or: [
+            { name: { $regex: name, $options: 'i' }},
+            { lastname: { $regex: name, $options: 'i' }}
+
+        ]
+    });
+}
+

@@ -57,3 +57,20 @@ export const deleteUser = async (req, res) => {
     }
 
 }
+
+export const findUserByName = async (req, res) => {
+
+    try {
+        const { name } = req.query;
+        if (!name) return res.status(404).json({ success: false, message: 'Se requiere un nombre para la búsqueda'});
+
+        const users = await userService.findUserByName(name);
+        if (users.length === 0) return res.status(404).json({ success: false, message: 'No se encontraron usuarios' });
+
+        res.status(200).json(users);
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+
+};
