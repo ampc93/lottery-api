@@ -1,32 +1,41 @@
 import express from 'express';
-import bodyParser from 'body-parser';
-import cors from 'cors'; 
+import cors from 'cors';
 import { connectDB } from './config/db.js';
 import organizationRoutes from './routes/organizationRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
 import optionRoutes from './routes/optionRoutes.js';
 import permissionRoutes from './routes/permissionRoutes.js';
 import userProfileRoutes from './routes/userProfileRoutes.js';
+import multer from 'multer';
 
 const app = express();
 
-// Middleware
+// **Configuración de CORS**
 app.use(cors({ 
-    origin: 'http://localhost:5173',  // Ajustar según el puerto del frontend
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Métodos permitidos
-    allowedHeaders: ['Content-Type', 'Authorization']  // Encabezados permitidos
-  }));
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-app.use( bodyParser.json() );
+// **Configuración de Express para manejar JSON grandes**
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-//Rutas
+// **Configurar Multer para manejar imágenes**
+const storage = multer.memoryStorage();
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // Límite de 5MB por archivo
+});
+
+// **Rutas**
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/options', optionRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/users', userProfileRoutes);
 
-//Conectar a la base de datos
+// **Conectar a la base de datos**
 connectDB();
 
 export default app;
