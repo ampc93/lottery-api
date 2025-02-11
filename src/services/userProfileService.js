@@ -1,5 +1,5 @@
 import UserProfile from "../models/userProfileModel.js";
-import sharp from 'sharp';
+import bcrypt from "bcrypt";
 
 
 async function convertirAJPEG(base64Data) {
@@ -17,19 +17,28 @@ async function convertirAJPEG(base64Data) {
 }
 
 // Crear un nuevo usuario
+
 export const createUser = async (userData) => {
-    try {
-      // Verificamos si hay una foto en Base64 y la convertimos a Buffer
-      if (userData.photo) {
-        userData.photo = Buffer.from(userData.photo, "base64");
-      }
-  
-      const newUser = await UserProfile.create(userData);
-      return newUser;
-    } catch (error) {
-      throw new Error(`Error al crear usuario: ${error.message}`);
+
+  try {
+    // Verificamos si hay una foto en Base64 y la convertimos a Buffer
+    if (userData.photo) {
+      userData.photo = Buffer.from(userData.photo, "base64");
     }
-  };
+
+    // Hashear la contraseña antes de guardar el usuario
+    if (userData.password) {
+      const salt = await bcrypt.genSalt(10);
+      userData.password = await bcrypt.hash(userData.password, salt);
+    }
+
+    const newUser = await UserProfile.create(userData);
+    return newUser;
+  } catch (error) {
+    throw new Error(`Error al crear usuario: ${error.message}`);
+  }
+
+};
 
 // Obtener todos los usuarios con paginación
 export const getUsers = async (page = 1, limit = 10) => {
@@ -53,30 +62,6 @@ export const getUsers = async (page = 1, limit = 10) => {
             UserProfile.countDocuments()
         ]);
 
-        // const usersConJPEG = await Promise.all(users.map(async (user) => {
-        //     let nuevoUsuario; // Declarar la variable aquí
-
-        //     if (user.photo) {
-        //         const base64Limpia = user.photo?.data || user.photo;
-        //         const imagenJPEG = await convertirAJPEG(base64Limpia);
-
-        //         if (imagenJPEG) { // Solo crear el nuevo objeto si la conversión fue exitosa
-        //             nuevoUsuario = { ...user };
-        //             nuevoUsuario.photo = imagenJPEG;
-        //         } else {
-        //             console.warn(`No se pudo convertir la imagen para el usuario ${user._id}. Se mantendrá la imagen original.`);
-        //             nuevoUsuario = { ...user }; // Se mantiene la imagen original o null si no existe.
-        //         }
-
-        //     } else {
-        //         nuevoUsuario = { ...user }; // Si no hay foto, se crea el objeto sin modificar.
-        //     }
-
-        //     return nuevoUsuario;
-        // }));
-
-        // return { users: usersConJPEG, total };
-
         return { users, total };
     } catch (error) {
         console.error("Error en getUsers:", error);
@@ -92,27 +77,40 @@ export const getUserById = async (id) => {
 
 // Actualizar un usuario por su ID
 export const updateUser = async (id, userData) => {
-
     try {
       if (!id.match(/^[0-9a-fA-F]{24}$/)) {
         throw new Error("Formato de ID inválido");
       }
   
-      // Si hay una foto, convertirla a Buffer
-      if (userData.photo) {
-        userData.photo = Buffer.from(userData.photo, "base64");
-      }
-  
-      const updatedUser = await UserProfile.findByIdAndUpdate(id, userData, { new: true });
-  
-      if (!updatedUser) {
+      // Obtener el usuario actual para no perder datos no enviados en la actualización
+      const existingUser = await UserProfile.findById(id);
+      if (!existingUser) {
         throw new Error("Usuario no encontrado");
       }
+  
+      // Si se proporciona una nueva foto, actualizarla; de lo contrario, mantener la existente
+      if (userData.photo) {
+        userData.photo = Buffer.from(userData.photo, "base64");
+      } else {
+        userData.photo = existingUser.photo; // Mantener la foto anterior
+      }
+  
+      // Si se proporciona una nueva contraseña, encriptarla; de lo contrario, mantener la existente
+      if (userData.password) {
+        const salt = await bcrypt.genSalt(10);
+        userData.password = await bcrypt.hash(userData.password, salt);
+      } else {
+        userData.password = existingUser.password; // Mantener la contraseña anterior
+      }
+  
+      // Actualizar el usuario con los datos proporcionados
+      const updatedUser = await UserProfile.findByIdAndUpdate(id, userData, { new: true });
   
       return updatedUser;
     } catch (error) {
       throw new Error(`Error al actualizar usuario: ${error.message}`);
     }
+    
   };
 
 // Eliminar un usuario por su ID
