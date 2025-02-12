@@ -6,7 +6,7 @@ import roleRoutes from './routes/roleRoutes.js';
 import optionRoutes from './routes/optionRoutes.js';
 import permissionRoutes from './routes/permissionRoutes.js';
 import userProfileRoutes from './routes/userProfileRoutes.js';
-import accessManagementRoutes from './routes/accessManagementRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import multer from 'multer';
 
 const app = express();
@@ -35,7 +35,7 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/options', optionRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/users', userProfileRoutes);
-app.use('/api/access', accessManagementRoutes);
+app.use('/api/auth', authRoutes);
 
 // **Conectar a la base de datos**
 connectDB();
