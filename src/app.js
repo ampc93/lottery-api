@@ -1,4 +1,5 @@
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { connectDB } from './config/db.js';
 import organizationRoutes from './routes/organizationRoutes.js';
@@ -15,12 +16,15 @@ const app = express();
 app.use(cors({ 
     origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
 
 // **Configuración de Express para manejar JSON grandes**
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+app.use(cookieParser());
 
 // **Configurar Multer para manejar imágenes**
 const storage = multer.memoryStorage();
