@@ -19,10 +19,10 @@ const loginUser = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     try {
-        const userId = req.userId;
+        const userId = req.body;
 
         if (!userId) {
-            return res.status(400).json({ success: false, message: 'El userId es obligatorio' });
+            return res.status(400).json({ success: false, message: 'ID de usuario no proporcionado' });
         }
 
         const result = await authService.logoutUser(userId, res);
