@@ -8,6 +8,7 @@ import optionRoutes from './routes/optionRoutes.js';
 import permissionRoutes from './routes/permissionRoutes.js';
 import userProfileRoutes from './routes/userProfileRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import lotteryRoutes from './routes/lotteryRoutes.js';
 import multer from 'multer';
 
 const app = express();
@@ -40,6 +41,7 @@ app.use('/api/options', optionRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/users', userProfileRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/lotteries', lotteryRoutes);
 
 // **Conectar a la base de datos**
 connectDB();
