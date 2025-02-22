@@ -23,7 +23,7 @@ const loginUser = async (username, password, res) => {
 
         // Generar el access token
         const accessToken = jwt.sign(
-            { id: user._id, role: user.role_id },
+            { id: user._id, role: user.role_id, organization: user.organization_id._id },
             JWT_SECRET,
             { expiresIn: '1h' }
         );

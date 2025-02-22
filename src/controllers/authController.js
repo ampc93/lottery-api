@@ -35,6 +35,7 @@ const logoutUser = async (req, res) => {
 
 const verifyToken = (req, res) => {
     try {
+        
         const token = req.cookies.authToken || req.headers.authorization?.split(' ')[1];
 
         if (!token) {

@@ -1,5 +1,6 @@
 import UserProfile from "../models/userProfileModel.js";
 import bcrypt from "bcrypt";
+import jwt from 'jsonwebtoken';
 
 
 async function convertirAJPEG(base64Data) {
@@ -16,9 +17,20 @@ async function convertirAJPEG(base64Data) {
     }
 }
 
+const userOrganization = (token) => {
+
+  const JWT_SECRET = process.env.JWT_SECRET;
+  const decoded = jwt.verify(token, JWT_SECRET);
+
+  const { organization } = decoded;
+
+  return organization;
+
+}
+
 // Crear un nuevo usuario
 
-export const createUser = async (userData) => {
+export const createUser = async (token, userData) => {
 
   try {
     // Verificamos si hay una foto en Base64 y la convertimos a Buffer
@@ -32,6 +44,11 @@ export const createUser = async (userData) => {
       userData.password = await bcrypt.hash(userData.password, salt);
     }
 
+    const organization = userOrganization(token);
+    if(organization){
+      userData.organization_id = organization;
+    }
+
     const newUser = await UserProfile.create(userData);
     return newUser;
   } catch (error) {
@@ -41,34 +58,81 @@ export const createUser = async (userData) => {
 };
 
 // Obtener todos los usuarios con paginación
-export const getUsers = async (page = 1, limit = 10) => {
-    try {
-        // Convertir `page` y `limit` a números enteros y validar
-        page = parseInt(page, 10);
-        limit = parseInt(limit, 10);
+export const getUsers = async (token, page = 1, limit = 10) => {
 
-        if (isNaN(page) || page < 1) page = 1;
-        if (isNaN(limit) || limit < 1) limit = 10;
+  try {
+      // Convertir `page` y `limit` a números enteros y validar
+      page = parseInt(page, 10);
+      limit = parseInt(limit, 10);
 
-        const skip = (page - 1) * limit;
+      if (isNaN(page) || page < 1) page = 1;
+      if (isNaN(limit) || limit < 1) limit = 10;
 
-        // Ejecutar ambas consultas en paralelo para mejorar rendimiento
-        const [users, total] = await Promise.all([
-            UserProfile.find()
-                .populate('role_id organization_id')
-                .skip(skip)
-                .limit(limit)
-                .lean(), // Optimiza la consulta
-            UserProfile.countDocuments()
-        ]);
+      const skip = (page - 1) * limit;
 
-        return { users, total };
-    } catch (error) {
-        console.error("Error en getUsers:", error);
-        throw error; // Propaga el error para manejo en el controlador
-    }
+      // Si no hay token o es inválido, retornar todos los usuarios
+      if (!token) {
+          const [users, total] = await Promise.all([
+              UserProfile.find()
+                  .populate('role_id organization_id')
+                  .skip(skip)
+                  .limit(limit)
+                  .lean(), // Optimiza la consulta
+              UserProfile.countDocuments() // Total de usuarios
+          ]);
+
+          return { users, total };
+      }
+
+      const organization = userOrganization(token);
+
+      // Ejecutar la consulta filtrando por `organization_id`
+      const [users, total] = await Promise.all([
+          UserProfile.find({ 'organization_id': organization, visible: true }) // Filtra por organization_id
+              .populate('role_id organization_id')
+              .skip(skip)
+              .limit(limit)
+              .lean(),
+          UserProfile.countDocuments({ 'organization_id': organization, visible: true }) // Cuenta los usuarios de la empresa
+      ]);
+
+      return { users, total };
+
+  } catch (error) {
+      console.error("Error en getUsers:", error);
+      throw error; // Propaga el error para manejo en el controlador
+  }
+
 };
 
+// export const getUsers = async (token, page = 1, limit = 10) => {
+//     try {
+//         // Convertir `page` y `limit` a números enteros y validar
+//         page = parseInt(page, 10);
+//         limit = parseInt(limit, 10);
+
+//         if (isNaN(page) || page < 1) page = 1;
+//         if (isNaN(limit) || limit < 1) limit = 10;
+
+//         const skip = (page - 1) * limit;
+
+//         // Ejecutar ambas consultas en paralelo para mejorar rendimiento
+//         const [users, total] = await Promise.all([
+//             UserProfile.find()
+//                 .populate('role_id organization_id')
+//                 .skip(skip)
+//                 .limit(limit)
+//                 .lean(), // Optimiza la consulta
+//             UserProfile.countDocuments()
+//         ]);
+
+//         return { users, total };
+
+//     } catch (error) {
+//         console.error("Error en getUsers:", error);
+//         throw error; // Propaga el error para manejo en el controlador
+//     }
+// };
 
 // Obtener un usuario por su ID
 export const getUserById = async (id) => {
@@ -119,8 +183,10 @@ export const deleteUser = async (id) => {
 };
 
 // Buscar usuarios por nombre o apellido con paginación
-export const findUserByName = async (name, page = 1, limit = 10) => {
+export const findUserByName = async (token, name, page = 1, limit = 10) => {
+
     try {
+
         // Validar que el nombre sea una cadena no vacía
         if (!name || typeof name !== "string" || !name.trim()) {
             throw new Error("El nombre debe ser una cadena válida.");
@@ -145,7 +211,11 @@ export const findUserByName = async (name, page = 1, limit = 10) => {
         };
 
         // Construir la consulta para buscar en nombre y apellido
+        const organization = userOrganization(token);
+
         const query = {
+            visible: true,
+            organization_id: organization,
             $or: searchTerms.map(term => ({
                 $or: [
                     { name: new RegExp(normalizeString(term), "i") },  // Coincidencia insensible a mayúsculas en el nombre
@@ -161,6 +231,7 @@ export const findUserByName = async (name, page = 1, limit = 10) => {
         ]);
 
         return { users, total };
+        
     } catch (error) {
         console.error("Error en findUserByName:", error);
         throw error;

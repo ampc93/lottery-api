@@ -16,7 +16,10 @@ const handleIdError = (error, res) => {
 
 export const createUser = async (req, res) => {
     try {
-        const newUser = await userService.createUser(req.body);
+
+        const token = req.cookies.authToken;
+
+        const newUser = await userService.createUser(token, req.body);
         res.status(201).json({
             success: true,
             message: 'Usuario creado exitosamente',
@@ -33,6 +36,9 @@ export const createUser = async (req, res) => {
 export const getUsers = async (req, res) => {
     try {
         
+        const token = req.cookies.authToken;
+
+        // Verificar si el token está presente
         let { page = 1, limit = 10 } = req.query;
 
         // Convertir a enteros y validar
@@ -43,7 +49,7 @@ export const getUsers = async (req, res) => {
         if (isNaN(limit) || limit < 1) limit = 10;
 
         // Obtener usuarios desde el servicio
-        const { users, total } = await userService.getUsers(page, limit);
+        const { users, total } = await userService.getUsers(token, page, limit);
         const totalPages = total > 0 ? Math.ceil(total / limit) : 0;
 
         res.status(200).json({
@@ -63,7 +69,9 @@ export const getUsers = async (req, res) => {
 
 export const getUserById = async (req, res) => {
     try {
+
         const user = await userService.getUserById(req.params.id);
+
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -126,6 +134,9 @@ export const deleteUser = async (req, res) => {
 
 export const findUserByName = async (req, res) => {
     try {
+
+        const token = req.cookies.authToken;
+
         let { name, page = 1, limit = 10 } = req.query;
 
         if (!name || name.trim() === "") {
@@ -144,6 +155,7 @@ export const findUserByName = async (req, res) => {
         limit = Math.min(50, limit); // Establecer un máximo
 
         const { users, total } = await userService.findUserByName(
+            token,
             name.trim(),
             page,
             limit
